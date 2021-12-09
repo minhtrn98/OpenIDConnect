@@ -1,4 +1,5 @@
-﻿using IdentityServer4.Services;
+﻿using IdentityServer4;
+using IdentityServer4.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIDConnect.Data;
@@ -57,10 +58,21 @@ namespace OpenIDConnect
                 .AddInMemoryApiResources(Config.ApiResources)
                 .AddInMemoryClients(Config.Clients)
                 .AddAspNetIdentity<ApplicationUser>()
-                .AddProfileService<CustomProfileService>();
+                .AddProfileService<CustomProfileService>()
+                // not recommended for production - you need to store your key material somewhere secure
+                .AddDeveloperSigningCredential();
 
-            // not recommended for production - you need to store your key material somewhere secure
-            builder.AddDeveloperSigningCredential();
+            // Add external login
+            services.AddAuthentication()
+                .AddGoogle("Google", options =>
+                {
+                    IConfigurationSection googleAuthNSection = Configuration.GetSection("Authentication:Google");
+
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+
+                    options.ClientId = googleAuthNSection["ClientId"];
+                    options.ClientSecret = googleAuthNSection["ClientSecret"];
+                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
